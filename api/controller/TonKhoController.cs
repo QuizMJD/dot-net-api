@@ -1,7 +1,9 @@
 // Controller: viết trong TonKhoController.cs
+using System.Data;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography;
 using Dapper;
+using Dapper.Oracle;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 
@@ -37,14 +39,31 @@ public class TonKhoController : ControllerBase
         using var db = new OracleConnection(conn);
         try
         {
-            var ds = await db.QueryAsync<TonKhoDto>(
-            """
-            SELECT MA_SP AS "MaSp",
-                   TEN_SP AS "TenSp",
-                   SOLUONG_TON AS "SoLuongTon"
-            FROM PDBADMIN.TON_KHO
-            """
-        ); return Ok(ds);
+        //     var ds = await db.QueryAsync<TonKhoDto>(
+        //     """
+        //     SELECT MA_SP AS "MaSp",
+        //            TEN_SP AS "TenSp",
+        //            SOLUONG_TON AS "SoLuongTon"
+        //     FROM PDBADMIN.TON_KHO
+        //     """
+        // );
+                var thamSo = new OracleDynamicParameters
+        {
+            BindByName = true
+        };
+
+        thamSo.Add(
+            "p_du_lieu",
+            dbType: OracleMappingType.RefCursor,
+            direction: ParameterDirection.Output
+        );
+
+        var ds = await db.QueryAsync<TonKhoDto>(
+        "PDBADMIN.PKG_TON_KHO_DEMO.P_DANH_SACH",
+        thamSo,
+        commandType: CommandType.StoredProcedure
+);
+         return Ok(ds);
         }
         catch (OracleException ex)
 {
